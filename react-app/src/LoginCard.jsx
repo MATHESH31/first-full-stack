@@ -1,18 +1,21 @@
 /* eslint-disable react/prop-types */
 import { useState } from 'react';
-import './LoginCard.css'
 import { FaSignInAlt, FaUser, FaLock, FaEyeSlash } from 'react-icons/fa'
+import './LoginCard.css'
+import { useNavigate } from 'react-router-dom';
 
 function LoginCard({ BodyStyling }) {
+  const [error, setError] = useState('');
   const [passwordVisibility, setPasswordVisibility] = useState({
     showPassword: false,
     inputType: 'password'
   }
 );
-  const [credentials, setCredentials] = useState({
-    username: '',
-    password: ''
-  })
+const [credentials, setCredentials] = useState({
+  username: '',
+  password: ''
+})
+const navigate = useNavigate();
   
   const bodyStyleObject = {
     width: '100vw',
@@ -33,9 +36,33 @@ function LoginCard({ BodyStyling }) {
     })
   }
 
-  const handleSubmit = (event) => { 
+  const handleSubmit = async (event) => { 
     event.preventDefault();
-    console.log({ "Credentials": credentials })
+    
+    await fetch('http://localhost:4000/auth/login',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(credentials)
+      }
+    ).then(res => {
+      if (res.ok) {
+        res.json().then(data => {
+          const { token } = data;
+          localStorage.setItem('token', token);
+          navigate('/dashboard')
+        });
+      }
+      else {
+        res.json().then(data => {
+          const { message } = data;
+          console.log(data);
+          setError(message)
+        });
+      }
+    })
   }
 
   const handleChange = (event) => { 
@@ -92,6 +119,11 @@ function LoginCard({ BodyStyling }) {
               opacity: '60%'
             }} onClick={showHumanReadablePassword}/>
           </div>
+          <p style={{
+            marginTop: '-3%',
+            marginBottom: '9%',
+            color: 'red'
+          }}> {error ? error : null}</p>
           <div className='forgot-password'>
             <a href=''>Forgot Password?</a>
           </div>
